@@ -11,6 +11,7 @@ class YoloLoss(nn.Module):
         self.C = C
         self.lambda_coord = 5
         self.lambda_noobj = 0.5
+        # các tham số lambda giúp điều trình tầm quan trọng của các lost, giảm sức ảnh hưởng quá lơn ko cần thiết.
         
     def forward(self, predictions, target):
         # target có dạng batch_size*7*7*30
