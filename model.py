@@ -25,27 +25,32 @@ architecture_config = [
 ]
 # không bao gồm các lớp FC.
 
+# xây dựng lên một nơ ron mạng.
 class CNNBlock(nn.Module):
     def __init__(self, in_channels, out_channels, **kwargs):
         super(CNNBlock, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
         self.batchnorm = nn.BatchNorm2d(out_channels) # vốn dĩ ko nằm trong yoloV1, được áp dụng từ yolov2
         self.leakyrelu = nn.LeakyReLU(0.1)
+        
+    # trình từ đi qua nơ ron.
     def forward(self, x):
         return self.leakyrelu(self.batchnorm(self.conv(x)))
     
 class Yolov1(nn.Module):
+    # mọi thứ đều phải kế thừa nn.Module, nơi chức nhiều các hàm, phương thức phục vụ cho việc xây dựng mô hình.
     def __init__(self, in_channels = 3, **kwargs):
         super(Yolov1, self).__init__()
         self.architecture = architecture_config
         self.in_channels = in_channels
         self.darknet = self._create_conv_layers(self.architecture)
         self.fcs = self._create_fcs(**kwargs)
-        
+    
     def forward(self, x):
         x = self.darknet(x)
         return self.fcs(torch.flatten(x, start_dim=1))
-    
+
+    # xây dựng backbone.
     def _create_conv_layers(self, architecture):
         layers = []
         in_channels = self.in_channels
@@ -83,13 +88,12 @@ class Yolov1(nn.Module):
         return nn.Sequential(*layers)
     
     def _create_fcs(self, split_size, num_boxes, num_classes):
-        S, B, C = split_size, num_boxes, num_classes
         return nn.Sequential(
             nn.Flatten(),
-            nn.Linear(1024 * S * S, 4096),
+            nn.Linear(1024 * split_size * split_size, 4096),
             nn.Dropout(0.0),
             nn.LeakyReLU(0.1),
-            nn.Linear(4096, S * S * (C + B * 5)), # (S, S, 30) where C + B + 5 = 30
+            nn.Linear(4096, split_size * split_size * (num_classes + num_boxes * 5)), # (S, S, 30) where C + B + 5 = 30
         )
 def test(S = 7, B = 2, C = 20):
     model = Yolov1(split_size = S, num_boxes = B, num_classes = C)
