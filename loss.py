@@ -35,7 +35,7 @@ class YoloLoss(nn.Module):
         exists_box = target[..., 20].unsqueeze(3)
         # ? để làm gì
 
-        best_box = best_box.unsqueeze(-1)
+        # best_box = best_box.unsqueeze(-1)
         #FOR BOX
         box_predictions = exists_box * (
             (
